@@ -2,3 +2,4 @@ data/raw/fiscalite_et_les_depenses_publiques.csv
 
 /Manifest.toml
 *.DS_Store
+*.Rhistory
