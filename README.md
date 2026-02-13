@@ -5,38 +5,33 @@
 
 
 <details>
-  <summary><strong>*Organisation*</strong></summary>
-Le travail est réparti sur 2 espaces de travail différents et complémentaires : cet espace GitHub et un [Google Drive](https://drive.google.com/drive/folders/1BAQFGbo8MChItaRL7MnYDB6EHD11MdNc?usp=drive_link).
-
-Les 2 espaces sont organisés de la même manière ; ils sont déclinés en 3 dossiers : 
+  <summary><strong>Organisation</strong></summary>
+Le GitHub est déclinés en 3 dossiers :
 
 - **data** : Les fichiers de données sur lesquels nous travaillons, qu'ils soient extraits à partir de LLMs ou construits à la main.
-- **docs** : Les fichiers de présentation du projet, des soutenances, etc.
-- **results** : Les fichiers de production (analyses, évaluation, brainstormings, etc.).
+- **docs** : Les fichiers de présentation du projet, les supports soutenances, etc.
+- **results** : Les fichiers de production (protocole, analyses, évaluations, etc.) : fichiers de code (.py, .ipynb, prompts LLM) et brouillon de visualisations (.excalidraw).
 
-Le Google Drive contient un dossier supplémentaire, **notes**, contenant les notes de réunions.
-
-Chaque fichier est nommé selon la convention suivante : "XX_AAMMJJ_Nom.ext", où XX correspond à la version/phase du fichier, AAMMJJ sa date de création et le "Nom" est séparé par des **majuscules** s'il est composé.
+Chaque fichier est nommé selon la même convention : "XX_AAMMJJ_Nom.ext", où XX correspond à la version/phase du projet dans laquelle s'inscrit le fichier, AAMMJJ sa date de création, et où "Nom" est séparé par des **majuscules** s'il est composé de plusieurs mots. \
+Seul le fichier "ExtractionPipeline.py" ne respecte pas cette convention puisqu'il à pour but d'être appelé dans des scripts python.
 </details>
 
 
 <details>
-  <summary><strong>*Répartition entre GitHub et Google Drive*</strong></summary>
-- **GitHub** : fichiers de données (.csv), fichiers de code (.ipynb, prompts LLM), brouillon de visualisations (.excalidraw), présentations (.pdf). \
-- **Google Drive** : fichiers texte (comptes-rendus de réunions, notes de brainstormings, etc.), diaporamas (présentations du projet), fichiers de données (trop volumineux pour GitHub ou fichiers d'annotations).
-</details>
-
-
+  <summary><strong>Phases du projet</strong></summary>
 <details>
-  <summary><strong>*Phases du projet*</strong></summary>
-<details>
-  <summary>00 - Présentations et suivi constant</summary>
-Détailler les fichiers...
+  <summary>01 - Exctraction des idées des contributions</summary>
+Les fichiers en "01_" correspondent au travail réalisé afin d'extraire les idées des contributions citoyennes via un LLM.
 </details>
 
 <details>
-  <summary>01 - Évaluation de la métrique QualIT</summary>
-Détailler les travaux effectuer...
+  <summary>02 - Statistiques descriptives et métriques </summary>
+Les fichiers en "_02" correspondent à l'évaluation des idées extraites : statistiques descriptives des extractions et évaluation de différentes métriques.
+</details>
+
+<details>
+  <summary>03 - Pipeline d'extraction et de nettoyage </summary>
+Les fichiers en "_03" correspondent à la consruction de la pipeline finale d'extraction et de nettoyage des idées extraites à l'aide des différentes métriques.
 </details>
 
 </details>
