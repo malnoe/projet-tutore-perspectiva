@@ -20,6 +20,10 @@ Seul le fichier "ExtractionPipeline.py" ne respecte pas cette convention puisqu'
 <details>
   <summary><strong>Phases du projet</strong></summary>
 <details>
+  <summary>00 - Présentation</summary>
+Les fichiers en "01_" correspondent au différentes présentations en rapport avec le projet.
+</details>
+
   <summary>01 - Exctraction des idées des contributions</summary>
 Les fichiers en "01_" correspondent au travail réalisé afin d'extraire les idées des contributions citoyennes via un LLM.
 </details>

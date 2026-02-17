@@ -24,26 +24,32 @@ def extraction_pipeline(
         extract_model: str = "llama3:8b-instruct-q4_K_M",
         embed_model: str = "sentence-transformers/all-MiniLM-L6-v2",
         device: str = "cpu",
-        return_intermediate: bool = False,
-        error_filter: str = "Oui",
-        rouge_filter: float = 0.0,
-        qualit_filter: float = 0.0
+        return_sentiments: bool = False,
+        return_complet: bool = False,
+        error_filter: bool = True,
+        qualit_filter: float = 0.0,
+        rouge1_filter: float = 0.0,
+        rougeL_filter: float = 0.0,
+        nli_filter: float = 0.0
     ) -> pd.DataFrame:
     """Pipeline d'extraction d'idées via LLM avec filtres post-extraction.
     Arguments :
         df : DataFrame avec colonnes 'author_id' et 'contribution'.
         system_prompt : Prompt système pour le LLM.
         user_template : Template utilisateur pour le LLM.
-        extract_model : Modèle Ollama pour l'extraction (défaut = "llama3:8b-instruct-q4_K_M").
+        extract_model : LLM pour l'extraction, appelé via ollama (défaut = "llama3:8b-instruct-q4_K_M").
         embed_model : Modèle de sentence-transformers pour les embeddings (défaut = "sentence-transformers/all-MiniLM-L6-v2").
         device : mode de calcul des embeddings (défaut = "cpu").
-        return_intermediate : retourne aussi le DataFrame intermédiaire des extractions (défaut = False).
+        return_sentiments : pour retourner le DataFrame intermédiaire avec l'analyse de sentiments (défaut = False).
+        return_complet : pour retourner le DataFrame complet avec les extractions brutes et des colonnes binaires de passage des filtres (défaut = False).
         error_filter : "Oui" pour filtrer les erreurs de parsing (défaut = "Oui").
         rouge_filter : Seuil minimal pour le score ROUGE (défaute = 0 : pas de filtre).
         qualit_filter : Seuil minimal pour le score QualIT (défaut = 0 : pas de filtre).
     Returns :
-        DataFrame avec les extractions et leurs scores.
-        Si return_intermediate=True, retourne un tuple (data_extracted, result).
+        Un dict avec (au plus) trois dataframes :
+        - "final" : DataFrame final filtré avec les extractions de haute qualité.
+        - "complet" : DataFrame final complet avec toutes les extractions et le passage des filtres ou non (si return_complet=True).
+        - "sentiments" : DataFrame intermédiaire avec les idées extraites et leurs types/syntaxe/sémantique (si return_sentiments=True).
     """
     
     # Vérification du dataframe
@@ -158,7 +164,7 @@ def extraction_pipeline(
         empty = pd.DataFrame(columns=[
             "author_id", "contribution_index", "description", "type", "syntax", "semantic"
         ])
-        return (empty, empty) if return_intermediate else empty
+        return (empty, empty) if return_sentiments else empty
     result = pd.concat(rows, ignore_index=True)
 
     # Agrégation et calcul QualIT
@@ -216,17 +222,41 @@ def extraction_pipeline(
     data_extracted[["rouge_score_1gram", "rouge_score_L"]] = data_extracted.apply(calc_rouge, axis=1)
 
     # Filtre des extractions échouées : présence de "[PARSE_FAIL]"
-    if error_filter == "Oui":
+    if error_filter:
         data_extracted = data_extracted[~data_extracted["extraction"].str.contains("[PARSE_FAIL]", na=False, regex=False)]
-    
-    # Filtre ROUGE (hallucinations)
-    if rouge_filter > 0:
-        data_extracted = data_extracted[data_extracted["rouge_score_1gram"] >= rouge_filter]
-    
+
     # Filtre QualIT (qualité faible)
-    if qualit_filter > 0:
-        data_extracted = data_extracted[data_extracted["qualit_score"] >= qualit_filter]
+    data_extracted["qualit_filter"] = (data_extracted["qualit_score"] >= qualit_filter).astype(int)
+
+    # Filtre ROUGE 1-gramme (hallucinations)
+    data_extracted["rouge1_filter"] = (data_extracted["rouge_score_1gram"] >= rouge1_filter).astype(int)
+
+    # Filtre ROUGE L (hallucinations)
+    data_extracted["rougeL_filter"] = (data_extracted["rouge_score_L"] >= rougeL_filter).astype(int)
+
+    # Filtre NLI (contradiction)
+    # data_extracted["nli_filter"] = (data_extracted["nli_score"] >= nli_filter).astype(int)
+
+    # Filtre global
+    data_extracted["global_filter"] = (
+        (data_extracted["qualit_filter"] == 1) &
+        (data_extracted["rouge1_filter"] == 1) &
+        (data_extracted["rougeL_filter"] == 1) #&
+        # (data_extracted["nli_filter"] == 1)
+    ).astype(int)
 
     # Résultats finaux
-    final_df = data_extracted.reset_index(drop=True)
-    return {"final": final_df, "intermediate": result} if return_intermediate else final_df
+    final_df = data_extracted[data_extracted["global_filter"] == 1].copy()
+    if return_complet:
+        if return_sentiments:
+            return {"final": final_df, "complet": data_extracted, "sentiments": result}
+        else:
+            return {"final": final_df, "complet": data_extracted}
+    else:
+        if return_sentiments:
+            return {"final": final_df, "sentiments": result}
+        else:
+            return {"final": final_df}
+        
+
+# A rajouter : calcul du score NLI (Cf notebook Yannis (à mettre à jour)).
