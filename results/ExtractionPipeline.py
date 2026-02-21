@@ -8,9 +8,7 @@ import pandas as pd
 import re
 from rouge_score import rouge_scorer
 from sentence_transformers import SentenceTransformer
-import torch
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoConfig
 
 
 # Fonctions nécessaires à la pipeline d'extraction
@@ -25,15 +23,13 @@ def extraction_pipeline(
         user_template: str,
         extract_model: str = "llama3:8b-instruct-q4_K_M",
         embed_model: str = "sentence-transformers/all-MiniLM-L6-v2",
-        nli_model: str = "ynie/roberta-large-snli_mnli_fever_anli_R1_R2_R3-nli",
         device: str = "cpu",
         return_sentiments: bool = False,
         return_complet: bool = False,
         error_filter: bool = True,
         qualit_filter: float = 0.0,
         rouge1_filter: float = 0.0,
-        rougeL_filter: float = 0.0,
-        nli_filter: float = 0.0
+        rougeL_filter: float = 0.0
     ) -> pd.DataFrame:
     """Pipeline d'extraction d'idées via LLM avec filtres post-extraction.
     Arguments :
@@ -224,40 +220,6 @@ def extraction_pipeline(
             return pd.Series({"rouge_score_1gram": 0.0, "rouge_score_L": 0.0})
     data_extracted[["rouge_score_1gram", "rouge_score_L"]] = data_extracted.apply(calc_rouge, axis=1)
 
-    # Calcul du score NLI
-    device_t = torch.device(device)
-    tokenizer = AutoTokenizer.from_pretrained(nli_model, use_fast=False)
-    model = AutoModelForSequenceClassification.from_pretrained(nli_model).to(device_t)
-    model.eval()
-    cfg = AutoConfig.from_pretrained(nli_model)
-    id2label = {int(k): v for k, v in cfg.id2label.items()} if isinstance(cfg.id2label, dict) else cfg.id2label
-    entail_idx = next((k for k, v in id2label.items() if "entail" in str(v).lower()), 2)
-    contra_idx = next((k for k, v in id2label.items() if "contrad" in str(v).lower()), 0)
-    n = len(data_extracted)
-    entail = np.zeros(n, dtype=np.float32)
-    contra = np.zeros(n, dtype=np.float32)
-    with torch.inference_mode():
-        for start in range(0, n, 1):
-            end = min(start + 1, n)
-            premises = data_extracted["contribution"].iloc[start:end].fillna("").astype(str).tolist()
-            hypos = data_extracted["extraction"].iloc[start:end].fillna("").astype(str).tolist()
-
-            enc = tokenizer(
-                premises,
-                hypos,
-                padding=True,
-                truncation=True,
-                max_length=512,
-                return_tensors="pt",
-            )
-            enc = {k: v.to(device_t) for k, v in enc.items()}
-            probs = torch.softmax(model(**enc).logits, dim=1).detach().cpu().numpy()
-            entail[start:end] = probs[:, entail_idx]
-            contra[start:end] = probs[:, contra_idx]
-    nli_entailment = entail.astype(float)
-    nli_contradiction = contra.astype(float)
-    data_extracted["nli_score"] = np.clip(nli_entailment - nli_contradiction, 0.0, 1.0)
-
     # Filtre des extractions échouées : présence de "[PARSE_FAIL]"
     if error_filter:
         data_extracted = data_extracted[~data_extracted["extraction"].str.contains("[PARSE_FAIL]", na=False, regex=False)]
@@ -270,9 +232,6 @@ def extraction_pipeline(
 
     # Filtre ROUGE L (hallucinations)
     data_extracted["rougeL_filter"] = (data_extracted["rouge_score_L"] >= rougeL_filter).astype(int)
-
-    # Filtre NLI (contradiction)
-    data_extracted["nli_filter"] = (data_extracted["nli_score"] >= nli_filter).astype(int)
 
     # Filtre global
     data_extracted["global_filter"] = (
@@ -294,6 +253,3 @@ def extraction_pipeline(
             return {"final": final_df, "sentiments": result}
         else:
             return {"final": final_df}
-        
-
-# A rajouter : calcul du score NLI (Cf notebook Yannis (à mettre à jour)).
