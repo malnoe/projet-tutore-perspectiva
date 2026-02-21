@@ -10,7 +10,7 @@ Le GitHub est déclinés en 3 dossiers :
 
 - **data** : Les fichiers de données sur lesquels nous travaillons, qu'ils soient extraits à partir de LLMs ou construits à la main.
 - **docs** : Les fichiers de présentation du projet, les supports soutenances, etc.
-- **results** : Les fichiers de production (protocole, analyses, évaluations, etc.) : fichiers de code (.py, .ipynb, prompts LLM) et brouillon de visualisations (.excalidraw).
+- **results** : Les fichiers de production : protocole, analyses, évaluations, etc.
 
 Chaque fichier est nommé selon la même convention : "XX_AAMMJJ_Nom.ext", où XX correspond à la version/phase du projet dans laquelle s'inscrit le fichier, AAMMJJ sa date de création, et où "Nom" est séparé par des **majuscules** s'il est composé de plusieurs mots. \
 Seul le fichier "ExtractionPipeline.py" ne respecte pas cette convention puisqu'il à pour but d'être appelé dans des scripts python.
